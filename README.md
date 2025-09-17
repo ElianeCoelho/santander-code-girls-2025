@@ -1,7 +1,7 @@
-# 🚀 AWS Santander Code Girls 2025 – Desafio EC2
+# 🚀 AWS Santander Code Girls 2025 – Desafios Práticos
 
-Este repositório foi criado como parte do desafio final do **bootcamp AWS Santander Code Girls 2025 (DIO)**.  
-O objetivo é consolidar os conhecimentos adquiridos em **gerenciamento de instâncias EC2 na AWS** e documentar, de forma organizada, as práticas e insights obtidos durante o curso.
+Este repositório foi criado como parte dos desafios finais do **bootcamp AWS Santander Code Girls 2025 (DIO)**.  
+O objetivo é consolidar os conhecimentos adquiridos em **serviços AWS** e documentar, de forma organizada, as práticas e insights obtidos durante o curso.  
 
 ---
 
@@ -38,41 +38,87 @@ Durante o bootcamp, percorremos os seguintes módulos:
    - Uso do **Amazon S3** para armazenamento escalável e seguro.  
    - Classes de armazenamento (Standard, Infrequent Access, Glacier).  
 
-7. **Gerenciando Instâncias EC2 na AWS (Desafio Final)**  
-   - Criação, configuração e gerenciamento de instâncias EC2.  
-   - Conexão segura via **SSH**.  
-   - Configuração de **grupos de segurança**.  
-   - Deploy simples de aplicações e encerramento seguro.
+7. **Desafios Finais**  
+   - Aplicação prática dos conceitos com **EC2** e **Step Functions**.  
 
 ---
 
-## ☁️ Arquitetura Prática (Fluxo de Dados em AWS)
+# 🖥️ Desafio 1 – Gerenciando Instâncias EC2 na AWS
 
-Para consolidar o aprendizado, foi criado o seguinte **modelo arquitetural em nuvem**, inspirado no contexto de **auditoria e monitoramento em tempo real de dados satelitais**:
+### 📌 Objetivo
+Consolidar os conhecimentos sobre criação, configuração e gerenciamento de **instâncias EC2**, aplicando boas práticas de segurança e custo.  
+
+### ☁️ Arquitetura Prática
+Fluxo de dados em nuvem inspirado no contexto de **auditoria e monitoramento em tempo real de dados satelitais**:
 
 ![Diagrama AWS](./diagramas/diagramaAWS.drawioComFluxoDescrito.png)
 
-### 🔎 Explicação do Fluxo
-1. **Satélite → Ground Station**  
-   - Dados satelitais coletados e transmitidos para a estação terrestre.  
+**Fluxo:**
+1. Satélite envia dados → Ground Station.  
+2. Ground Station → **Amazon S3** (Landing Zone).  
+3. **AWS Lambda → EC2/EBS** processam arquivos.  
+4. **NDR/IDS** faz auditoria de tráfego em tempo real.  
+5. Dados processados → **S3 Analytics → Glue → Glacier**.  
 
-2. **Ground Station → Amazon S3 (Landing Zone)**  
-   - Armazenamento inicial (dados brutos).  
-   - Criação de um bucket de entrada para centralizar os dados recebidos.  
+### 💡 Insights
+- O **S3** centraliza dados brutos.  
+- **Lambda** garante escalabilidade serverless.  
+- **EC2 + IDS/NDR** reforçam segurança.  
+- **Glacier** é ideal para arquivamento de longo prazo.  
 
-3. **AWS Lambda → EC2/EBS**  
-   - Lambda processa eventos e envia para instâncias EC2.  
-   - EC2 com EBS armazena e processa dados críticos.  
-
-4. **NDR/IDS**  
-   - Auditoria de tráfego em tempo real, monitorando possíveis incidentes de segurança.  
-
-5. **S3 Analytics → AWS Glue → Glacier**  
-   - Dados processados são organizados no **S3 Analytics**.  
-   - O **AWS Glue** permite integração e preparação de dados.  
-   - Dados de longo prazo são arquivados no **Amazon Glacier** (baixo custo).  
+### 📷 Evidências
+- As capturas de tela do laboratório estão na pasta [`Desafio_1/imagens`](./Desafio_1/imagens/).  
+- Mostram a criação da instância EC2, configuração de segurança e conectividade SSH.  
 
 ---
+
+# 🔄 Desafio 2 – Explorando AWS Step Functions
+
+### 📌 Objetivo
+Experimentar o **AWS Step Functions** como serviço de **orquestração de workflows**, integrando serviços da AWS (Lambda, S3, SNS, SQS, DynamoDB) de forma visual e com pouco código.  
+
+### ☁️ Arquitetura Prática
+**Caso de uso:** Validação e processamento de arquivos em bucket S3.  
+
+1. Arquivo enviado ao **S3** dispara o fluxo.  
+2. **Lambda** valida metadados.  
+3. Se válido → **Lambda** processa.  
+4. Em caso de erro → notificação via **SNS/SQS**.  
+5. Dados processados → armazenados/analisados.  
+
+### 🧩 State Machine (ASL JSON)
+Exemplo simplificado da definição do workflow:
+
+```json
+{
+  "Comment": "Workflow: validar e processar arquivo do S3",
+  "StartAt": "ValidarEntrada",
+  "States": {
+    "ValidarEntrada": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGIAO:CONTA:function:validar_entrada",
+      "Next": "EntradaValida?"
+    },
+    "EntradaValida?": {
+      "Type": "Choice",
+      "Choices": [
+        { "Variable": "$.valido", "BooleanEquals": true, "Next": "ProcessarArquivo" }
+      ],
+      "Default": "NotificarErro"
+    },
+    "ProcessarArquivo": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGIAO:CONTA:function:processar_arquivo",
+      "Next": "Sucesso"
+    },
+    "NotificarErro": {
+      "Type": "Fail",
+      "Cause": "Erro na validação"
+    },
+    "Sucesso": { "Type": "Succeed" }
+  }
+}
+
 
 ## 💡 Insights Pessoais
 
@@ -85,8 +131,12 @@ Para consolidar o aprendizado, foi criado o seguinte **modelo arquitetural em nu
 ---
 
 ## 📷 Evidências
-As capturas de tela do laboratório foram adicionadas na pasta [`/images`](./images).  
+As capturas de tela do laboratório Desafio 1 foram adicionadas na pasta [`Desafio_1/imagens`](./Desafio_1/imagens/). 
+
 Elas mostram o processo de criação da instância EC2, configuração de segurança e teste de conectividade.
+
+s capturas de tela do laboratório Desafio_Explorando_o_AWS_Step_Functions foram adicionadas na pasta [`Desafio_Explorando_o_AWS_Step_Functions`](./Desafio_Explorando_o_AWS_Step_Functions/imagens/). 
+
 
 ---
 
